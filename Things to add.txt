@@ -1,0 +1,3 @@
+Different tabs for different processes. Only show tab if option for that process is turned on:
+
+https://www.mathworks.com/matlabcentral/answers/251870-is-there-a-way-to-hide-a-specific-uitab
