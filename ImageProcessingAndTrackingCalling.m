@@ -6,12 +6,10 @@ addpath(genpath('.'))
 % inputnames = "E:\PIV Data\Processed Data\2022_06_23\T2\HistMatchImages\R1\*.tiff";
 % SaveDirec = 'E:\PIV Data\Processed Data\2022_06_23\T2\PTVGasPhase\R1';
 
-settings.gamma = settings.Gamme;
-
 filelist = dir(inputnames);
 
 ImageNames = {filelist.name}; ImageFolder = filelist(1).folder; clearvars filelist
-img = LoadingImages(ImageFolder,ImageNames,0,0);
+img = LoadingImages(ImageFolder,ImageNames,0,settings.FlipLighting);
 
 %Image Contrast Adjustment
 img = ImageAdjust(img,settings.adjustlow,settings.adjusthigh,settings.gamma);
