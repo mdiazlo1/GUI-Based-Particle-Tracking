@@ -1,5 +1,7 @@
-function [img, BitDepth] = LoadingImages(ImageFolder,ImageNames,frame_list,ImageFlip)
-
+function [img, BitDepth] = LoadingImages(ImageFolder,ImageNames,frame_list,ImageFlip,fig)
+  d = uiprogressdlg(fig,'Title','Please Wait','Message','Subtracting Background'...
+        ,'Indeterminate','on');
+  drawnow
 %Loading images for everything but a cine file
 [~,~,ext] = fileparts(ImageNames{1});
 if ext ~= ".cine"
@@ -20,6 +22,7 @@ if ext ~= ".cine"
         end
     end
 end
+close(d)
 
 %Loading Images if it is a cine file
 
