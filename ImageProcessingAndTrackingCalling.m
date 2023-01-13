@@ -24,7 +24,7 @@ end
 parfor i = 1:numel(frame_list)
     imwrite(img(:,:,i),[SaveDirec filesep 'data_' sprintf('%04d',frame_list(i)) '.tif'])
 end
-settings.area_lim = flip(settings.area_lim);
+
 %Tracking
 [vtracks,~,~,~,tracks] = PredictiveTracker([SaveDirec '\*.tif'],settings.BinaryThresh,settings.max_disp,[],settings.area_lim);
 
