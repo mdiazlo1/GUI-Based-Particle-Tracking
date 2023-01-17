@@ -1,4 +1,4 @@
-function [img, BitDepth] = LoadingImages(ImageFolder,suffix,frame_list,ImageFlip,fig)
+function [img, BitDepth] = LoadingImages(ImageFolder,suffix,bitshift,frame_list,ImageFlip,fig)
 if nargin == 4
     fig = uifigure;
 end
@@ -33,7 +33,7 @@ if suffix ~= ".cine"
     img = zeros([size(FirstImage) numel(idx)],class(FirstImage));
 
     parfor i = 1:numel(idx)
-        img(:,:,i) = imread(fullfile(ImageFolder,ImageNames{idx(i)}));
+        img(:,:,i) = imread(fullfile(ImageFolder,ImageNames{idx(i)})).*2^bitshift;
 %         if ImageFlip
 %             img(:,:,i) = (2^BitDepth-1) - img(:,:,i);
 %         end
@@ -42,11 +42,11 @@ if suffix ~= ".cine"
 else
     LoadPhantomLibraries();
     RegisterPhantom(true)
-       [~,FirstImage] = ReadCineFileImage([ImageDirec ImageNames{1}],1,false);
-
+       [~,FirstImage] = ReadCineFileImage([ImageFolder filesep ImageNames{1}],1,false);
+       BitDepth = 16;
        img = zeros([size(FirstImage) numel(frame_list)],class(FirstImage));
     for i = 1:numel(ImageNames)
-        [HRES,cineHandle] = PhNewCineFromFile([ImageFolder,ImageNames{i}]);
+        [HRES,cineHandle] = PhNewCineFromFile([ImageFolder filesep ImageNames{i}]);
         if(HRES<0)
             [message] = PhGetErrorMessage(HRES);
             error(['Cine Handle Creation error: ' message])
@@ -58,9 +58,10 @@ else
         LastFrame = int32(double(pFirstIm.Value)+double(pImCount.Value)-1);
 
         [Common,idx] = intersect(pFirstIm.Value:LastFrame,frame_list);
-       
+        CineFile = ImageNames{i};
         parfor j = pFirstIm.value+1:numel(Common)
-            [~,img(:,:,j)] = ReadCineFileImage(ImageDirec,Common(j),false)
+            [~,img(:,:,j)] = ReadCineFileImage([ImageFolder filesep CineFile],Common(j),false)
+            img(:,:,j) = img(:,:,j).*2^bitshift
 %             if ImageFlip
 %                 img(:,:,j) = (2^BitDepth-1) - img(:,:,j);
 %             end
