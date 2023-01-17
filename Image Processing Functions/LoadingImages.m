@@ -42,9 +42,11 @@ if suffix ~= ".cine"
 else
     LoadPhantomLibraries();
     RegisterPhantom(true)
+       ImageNames = flip(sort(ImageNames));
        [~,FirstImage] = ReadCineFileImage([ImageFolder filesep ImageNames{1}],1,false);
        BitDepth = 16;
        img = zeros([size(FirstImage) numel(frame_list)],class(FirstImage));
+       FirstImgNextCine = zeros(1,numel(ImageNames));
     for i = 1:numel(ImageNames)
         [HRES,cineHandle] = PhNewCineFromFile([ImageFolder filesep ImageNames{i}]);
         if(HRES<0)
@@ -59,13 +61,15 @@ else
 
         [Common,idx] = intersect(pFirstIm.Value:LastFrame,frame_list);
         CineFile = ImageNames{i};
-        parfor j = pFirstIm.value+1:numel(Common)
+        if isempty(Common)
+            continue
+        end
+        
+        parfor j = FirstImgNextCine(i-1)+1:numel(Common)
             [~,img(:,:,j)] = ReadCineFileImage([ImageFolder filesep CineFile],Common(j),false)
             img(:,:,j) = img(:,:,j).*2^bitshift
-%             if ImageFlip
-%                 img(:,:,j) = (2^BitDepth-1) - img(:,:,j);
-%             end
         end
+        FirstImgNextCine(i) = LastFrame;
 
     end
 
