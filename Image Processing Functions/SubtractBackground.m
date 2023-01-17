@@ -5,11 +5,11 @@ classtype = class(img(:,:,1));
 d = uiprogressdlg(fig,'Title','Please Wait','Message','Subtracting Background');
 
 if rollingwindow
-    for i = 1:rollingwindow/2:size(img,3)
+    for i = 1:rollingwindow/2+1:size(img,3)
         d.Value = i/size(img,3);
-        if i<rollingwindow/2+1
+        if i<=rollingwindow/2+2
             %Forward averaging
-            img_bg = mean(double(img(:,:,1:frameskip:i+rollingwindow/2)),3);
+            img_bg = mean(double(img(:,:,i:frameskip:i+rollingwindow/2)),3);
 
             img(:,:,i:i+rollingwindow/2) = double(img(:,:,i:i+rollingwindow/2))-img_bg;
         elseif i>size(img,3)-rollingwindow
@@ -19,9 +19,9 @@ if rollingwindow
             img(:,:,i:size(img,3)) = double(img(:,:,i:size(img,3)))-img_bg;
         else
             %Central averaging
-            img_bg = mean(img(:,:,i-rollingwindow/2:i+rollingwindow/2),3);
+            img_bg = mean(img(:,:,i-rollingwindow/2:frameskip:i+rollingwindow/2),3);
 
-            img = double(img(:,:,i-rollingwindow/2:i+rollingwindow/2)-img_bg,3);
+            img = double(img(:,:,i-rollingwindow/2:frameskip:i+rollingwindow/2)-img_bg,3);
         end
     end
 else
