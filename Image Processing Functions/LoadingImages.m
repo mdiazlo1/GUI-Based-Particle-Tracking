@@ -1,12 +1,13 @@
-function [img, BitDepth] = LoadingImages(ImageFolder,frame_list,ImageFlip,fig)
+function [img, BitDepth] = LoadingImages(ImageFolder,suffix,frame_list,ImageFlip,fig)
 if nargin == 4
     fig = uifigure;
 end
-  d = uiprogressdlg(fig,'Title','Please Wait','Message','Subtracting Background'...
+  d = uiprogressdlg(fig,'Title','Please Wait','Message','Loading Images'...
         ,'Indeterminate','on');
   drawnow
 %% Getting Image directories and cropping for only frame_list specified
-ImageNames = filelist(ImageFolder);
+filelist = dir([ImageFolder filesep '*' suffix]);
+ImageNames = {filelist.name}; clearvars filelist
 [~,~,ext] = fileparts(ImageNames{1});
 ImgNum = regexp(ImageNames,'\d*','Match');
 
@@ -14,7 +15,7 @@ if frame_list == 0
     frame_list = 0:numel(ImageNames)-1;
 end
 
-ImgNum = cellfun(@str2double,ImgNum);
+ImgNum = cell2mat(cellfun(@str2double,ImgNum,'UniformOutput',false));
 [~,idx] = intersect(ImgNum,frame_list);
 if isempty(idx)
     errordlg('frame_list is outside of image range')
@@ -27,7 +28,7 @@ if ext ~= ".cine"
     imgInfo = imfinfo(fullfile(ImageFolder,ImageNames{1}));
     BitDepth = imgInfo.BitDepth;
 
-    img = zeros([size(FirstImage) numel(ImageNames)],class(FirstImage));
+    img = zeros([size(FirstImage) numel(idx)],class(FirstImage));
 
     parfor i = 1:numel(idx)
         img(:,:,i) = imread(fullfile(ImageFolder,ImageNames{idx(i)}));
