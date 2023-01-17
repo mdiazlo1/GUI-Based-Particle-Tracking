@@ -1,4 +1,4 @@
-function [vtracks,tracks] = ImageProcessingAndTrackingCalling(settings,inputnames,SaveDirec,frame_list)
+function [vtracks,tracks] = ImageProcessingAndTrackingCalling(settings,Imagefolder,ImageSuffix,SaveDirec,frame_list)
 % frame_list = 0;
 
 addpath(genpath('.'))
@@ -6,15 +6,12 @@ addpath(genpath('.'))
 % inputnames = "E:\PIV Data\Processed Data\2022_06_23\T2\HistMatchImages\R1\*.tiff";
 % SaveDirec = 'E:\PIV Data\Processed Data\2022_06_23\T2\PTVGasPhase\R1';
 
-filelist = dir(inputnames);
-
-ImageNames = {filelist.name}; ImageFolder = filelist(1).folder; clearvars filelist
-img = LoadingImages(ImageFolder,ImageNames,0,settings.FlipLighting);
+img = LoadingImages(Imagefolder,ImageSuffix,0,settings.FlipLighting);
 
 %Image Contrast Adjustment
 img = ImageAdjust(img,settings.adjustlow,settings.adjusthigh,settings.gamma);
 
-%Image Sharpening
+%Image Sharpening 
 img = ImageSharpening(img,settings.SharpenRadius,settings.SharpenAmount,settings.SharpenThreshold);
 
 %Saving Images
