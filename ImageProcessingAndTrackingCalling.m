@@ -3,6 +3,7 @@ function [vtracks,tracks] = ImageProcessingAndTrackingCalling(settings,Imagefold
 % For this function to work you have to specify a frame_list. Settings.mat file
 %can be generated from the GUI for settings. SplitData value is how many
 %times you want to split the frame_list so you don't overload the ram.
+
 if SplitData
     SizeEachSplit = round(numel(frame_list)/SplitData,-3);
 else
