@@ -1,5 +1,9 @@
 function AdjustedImg = ImageAdjust(img,adjustlow,adjusthigh,gamma,fig)
-d = uiprogressdlg(fig,'Title','Please Wait','Message','Subtracting Background'...
+if nargin < 5
+    fig = uifigure;
+end
+
+d = uiprogressdlg(fig,'Title','Please Wait','Message','Adjusting Image Lighting'...
     ,'Indeterminate','on');
 drawnow
 classtype = class(img(:,:,1));

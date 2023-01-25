@@ -1,8 +1,8 @@
 function [img, BitDepth] = LoadingImages(ImageFolder,suffix,bitshift,frame_list,ImageFlip,fig)
-if nargin == 4
+if nargin < 6
     fig = uifigure;
 end
-d = uiprogressdlg(fig,'Title','Please Wait','Message','Loading Images'...
+d = uiprogressdlg(fig,'Title','Please Wait','Message',['Loading Images ' num2str(frame_list(1)) ' to ' num2str(frame_list(end))]...
     ,'Indeterminate','on');
 drawnow
 %% Getting Image directories and cropping for only frame_list specified
@@ -65,11 +65,11 @@ else
             continue
         end
         
-        parfor j = FirstImgNextCine(i-1)+1:numel(Common)
+        parfor j = FirstImgNextCine(i)+1:numel(Common)
             [~,img(:,:,j)] = ReadCineFileImage([ImageFolder filesep CineFile],Common(j),false)
             img(:,:,j) = img(:,:,j).*2^bitshift
         end
-        FirstImgNextCine(i) = LastFrame;
+        FirstImgNextCine(i+1) = LastFrame;
 
     end
 

@@ -1,4 +1,8 @@
 function SharpenedImg = ImageSharpening(img,Radius,Amount,Threshold,fig)
+if nargin < 5
+    fig = uifigure;
+end
+
   d = uiprogressdlg(fig,'Title','Please Wait','Message','Sharpening Images'...
         ,'Indeterminate','on');
   drawnow
