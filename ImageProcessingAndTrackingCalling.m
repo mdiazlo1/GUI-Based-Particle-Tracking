@@ -20,7 +20,7 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     
     addpath(genpath('.'))
     fig = uifigure;
-    img = LoadingImages(Imagefolder,ImageSuffix,settings.BitShift,Splitframe_list,settings.FlipLighting,fig);
+    img = LoadImages(Imagefolder,ImageSuffix,settings.BitShift,Splitframe_list,settings.FlipLighting,fig);
 
     %Background Subtraction
     if settings.BgSubBool == "On"
