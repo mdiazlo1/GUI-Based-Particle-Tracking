@@ -21,7 +21,9 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     addpath(genpath('.'))
     fig = uifigure;
     img = LoadImages(Imagefolder,ImageSuffix,settings.BitShift,Splitframe_list,settings.FlipLighting,fig);
-
+    if settings.Rotate
+        img = rot90(img,settings.Rotate);
+    end
     %Background Subtraction
     if settings.BgSubBool == "On"
         img = SubtractBackground(img,settings.FrameSkip,settings.RollingWindow,fig);

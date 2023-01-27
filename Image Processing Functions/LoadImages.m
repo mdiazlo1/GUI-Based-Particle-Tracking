@@ -78,6 +78,7 @@ else
 if ImageFlip
     img = imcomplement(img);
 end
+
 end
 
 
