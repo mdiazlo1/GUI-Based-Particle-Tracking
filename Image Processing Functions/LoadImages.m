@@ -43,7 +43,7 @@ else
     LoadPhantomLibraries();
     RegisterPhantom(true)
        ImageNames = flip(sort(ImageNames));
-       [~,FirstImage] = ReadCineFileImage([ImageFolder filesep ImageNames{1}],1,false);
+       [~,FirstImage] = ReadCineFileImage([ImageFolder filesep ImageNames{1}],frame_list(1),false);
        BitDepth = 16;
        img = zeros([size(FirstImage) numel(frame_list)],class(FirstImage));
        FirstImgNextCine = zeros(1,numel(ImageNames));

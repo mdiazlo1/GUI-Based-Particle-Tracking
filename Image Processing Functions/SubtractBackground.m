@@ -22,7 +22,7 @@ if rollingwindow
             imgBgSub(:,:,i:size(img,3)) = cast(double(img(:,:,i:size(img,3)))-img_bg,classtype);
         else
             %Central averaging
-            img_bg = mean(img(:,:,i-rollingwindow/2:frameskip:i+rollingwindow/2),3);
+            img_bg = mean(double(img(:,:,i-rollingwindow/2:frameskip:i+rollingwindow/2)),3);
 
             imgBgSub(:,:,i:i+rollingwindow/2) = cast(double(img(:,:,i:i+rollingwindow/2))-img_bg,classtype);
         end
@@ -34,8 +34,8 @@ else
 %     csum = sum(double(img(:,:,1:frameskip:size(img,3))),3);
 %     img_bg = csum./numel(img);
     img_bg = mean(double(img(:,:,1:frameskip:size(img,3))),3);
-    img = double(img)-img_bg;
-    img = cast(img,classtype);
+    imgBgSub = double(img)-img_bg;
+    imgBgSub = cast(imgBgSub,classtype);
 end
 clearvars img_bg
 
