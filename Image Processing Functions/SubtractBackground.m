@@ -1,4 +1,4 @@
-function imgBgSub = SubtractBackground(img,frameskip,rollingwindow,fig)
+function [imgBgSub,BgTypical] = SubtractBackground(img,frameskip,rollingwindow,fig)
 classtype = class(img(:,:,1));
 % rollingwindow = 0;
 % frameskip = 1;
@@ -12,7 +12,7 @@ if rollingwindow
         d.Value = i/size(img,3);
         if i<rollingwindow/2+1
             %Forward averaging
-            img_bg = mean(double(img(:,:,i:frameskip:i+rollingwindow/2)),3);
+            img_bg = mean(double(img(:,:,i:frameskip:i+rollingwindow)),3);
 
             imgBgSub(:,:,i:i+rollingwindow/2) = cast(double(img(:,:,i:i+rollingwindow/2))-img_bg,classtype);
         elseif i>size(img,3)-rollingwindow/2
@@ -23,6 +23,7 @@ if rollingwindow
         else
             %Central averaging
             img_bg = mean(double(img(:,:,i-rollingwindow/2:frameskip:i+rollingwindow/2)),3);
+            BgTypical = cast(img_bg,classtype);
 
             imgBgSub(:,:,i:i+rollingwindow/2) = cast(double(img(:,:,i:i+rollingwindow/2))-img_bg,classtype);
         end
@@ -36,6 +37,7 @@ else
     img_bg = mean(double(img(:,:,1:frameskip:size(img,3))),3);
     imgBgSub = double(img)-img_bg;
     imgBgSub = cast(imgBgSub,classtype);
+    BgTypical = cast(img_bg,classtype);
 end
 clearvars img_bg
 
