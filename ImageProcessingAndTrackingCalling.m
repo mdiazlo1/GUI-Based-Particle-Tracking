@@ -3,7 +3,6 @@ function [vtracks,tracks] = ImageProcessingAndTrackingCalling(settings,Imagefold
 % For this function to work you have to specify a frame_list. Settings.mat file
 %can be generated from the GUI for settings. SplitData value is how many
 %times you want to split the frame_list so you don't overload the ram.
-
 if SplitData
     SizeEachSplit = round(numel(frame_list)/SplitData,-2)+1;
 else
@@ -23,6 +22,10 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     img = LoadImages(Imagefolder,ImageSuffix,settings.BitShift,Splitframe_list,settings.FlipLighting,fig);
     if settings.Rotate
         img = rot90(img,settings.Rotate);
+    end
+    %Homomorphic Filter
+    if settings.ImHFiltBool == "On"
+        img = HomomorphicFilter(img,settings.Sigma,settings.Alpha,settings.Beta,settings.BitDepth,fig);
     end
     %Background Subtraction
     if settings.BgSubBool == "On"
