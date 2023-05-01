@@ -227,8 +227,12 @@ for t = 2:Nf
         newtracks=[];
         unmatched=[];
     end
+    
     active = [active (numel(tracks)+1):(numel(tracks)+numel(newtracks))];
     tracks = [tracks ; newtracks];
+    if numel(tracks)>1e6
+        [tracks, active] = PruneTracksMidWay(tracks,fitwidth,active);
+    end
     n_active = numel(active);
 
     disp(['Processed frame ' num2str(t) ' of ' num2str(Nf) '.'])

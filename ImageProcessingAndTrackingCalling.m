@@ -19,13 +19,13 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     
     addpath(genpath('.'))
     fig = uifigure;
-    img = LoadImages(Imagefolder,ImageSuffix,settings.BitShift,Splitframe_list,settings.FlipLighting,fig);
+    [img,BitDepth] = LoadImages(Imagefolder,ImageSuffix,settings.BitShift,Splitframe_list,settings.FlipLighting,fig);
     if settings.Rotate
         img = rot90(img,settings.Rotate);
     end
     %Homomorphic Filter
     if settings.ImHFiltBool == "On"
-        img = HomomorphicFilter(img,settings.Sigma,settings.Alpha,settings.Beta,settings.BitDepth,fig);
+        img = HomomorphicFilter(img,settings.Sigma,settings.Alpha,settings.Beta,BitDepth,fig);
     end
     %Background Subtraction
     if settings.BgSubBool == "On"
@@ -48,7 +48,7 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     close(d)
     close(fig)
 end
-
+clearvars img
 %Tracking
 [vtracks,~,~,~,tracks] = PredictiveTracker([SaveDirec '\*.tif'],settings.BinaryThresh,settings.max_disp,[],settings.area_lim);
 
