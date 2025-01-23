@@ -1,3 +1,6 @@
 [submodule "PIVLab"]
 	path = PIVLab
 	url = https://github.com/Shrediquette/PIVlab.git
+[submodule "MyPIVLab"]
+	path = MyPIVLab
+	url = git@github.com:mdiazlo1/PIVlab.git
