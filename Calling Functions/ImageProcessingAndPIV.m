@@ -1,10 +1,13 @@
-function [vtracks,tracks] = ImageProcessingAndTrackingCalling(settings,Imagefolder,ImageSuffix,frame_list,SplitData,SaveDirec)
+function [x,y,u,v,u_filt,v_filt] = ImageProcessingAndPIV(settings,Imagefolder,ImageSuffix,frame_list,SplitData,SaveDirec)
 %[vtracks,tracks] = ImageProcessingAndTrackingCalling(settings,Imagefolder,ImageSuffix,frame_list,SplitData,SaveDirec)
 % For this function to work you have to specify a frame_list. Settings.mat file
 %can be generated from the GUI for settings. SplitData value is how many
 %times you want to split the frame_list so you don't overload the ram.
 if SplitData
     SizeEachSplit = round(numel(frame_list)/SplitData,-2)+1;
+    if mod(SizeEachSplit,2) == 1
+        SizeEachSplit = SizeEachSplit+1;
+    end
 else
     SizeEachSplit = numel(frame_list);
 end
@@ -49,11 +52,8 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     close(fig)
 end
 clearvars img
-% Calling PIV Lab
-PIVLab_commandline(images,settings)
-
-
-
+% Calling PIVLab
+[x,y,u,v,u_filt,v_filt] = PIVlab_commandline(images,settings);
 
 
 end

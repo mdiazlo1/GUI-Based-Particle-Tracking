@@ -49,9 +49,8 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     close(fig)
 end
 clearvars img
-% Calling PIV Lab
-PIVLab_commandline(images,settings)
-
+%Tracking
+[vtracks,~,~,~,tracks] = PredictiveTracker([SaveDirec '\*.tif'],settings.BinaryThresh,settings.max_disp,[],settings.area_lim);
 
 
 
