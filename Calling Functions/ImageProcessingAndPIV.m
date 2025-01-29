@@ -51,11 +51,11 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     close(d)
     close(fig)
 end
-clearvars img
+
 % Calling PIVLab
-[x,y,u,v,u_filt,v_filt] = PIVlab_commandline(images,settings);
+[x,y,u,v,u_filt,v_filt] = PIVlab_commandline(img,settings,SaveDirec);
 
-
+clearvars img
 end
 
 

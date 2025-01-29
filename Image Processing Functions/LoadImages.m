@@ -68,9 +68,9 @@ else
             continue
         end
         
-        parfor j = FirstImgNextCine(i)+1:numel(Common)
-            [~,img(:,:,j)] = ReadCineFileImage([ImageFolder filesep CineFile],Common(j),false)
-            img(:,:,j) = img(:,:,j).*2^bitshift
+        for j = FirstImgNextCine(i)+1:numel(Common)
+            [~,img(:,:,j)] = ReadCineFileImage([ImageFolder filesep CineFile],Common(j),false);
+            img(:,:,j) = img(:,:,j).*2^bitshift;
         end
         FirstImgNextCine(i+1) = LastFrame;
 
