@@ -3,6 +3,11 @@ function [x,y,u,v,u_filt,v_filt] = ImageProcessingAndPIV(settings,Imagefolder,Im
 % For this function to work you have to specify a frame_list. Settings.mat file
 %can be generated from the GUI for settings. SplitData value is how many
 %times you want to split the frame_list so you don't overload the ram.
+
+% Setting up PIV variables for data splitting
+NumPairs = numel(frame_list)/2; u_filt = cells(NumPairs); v_filt = cells(NumPairs);
+
+% Data Splitting
 if SplitData
     SizeEachSplit = round(numel(frame_list)/SplitData,-2)+1;
     if mod(SizeEachSplit,2) == 1
@@ -19,15 +24,14 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     else
         Splitframe_list = frame_list(SplitFrame:end);
     end
-    
+    %% Image Processing
     addpath(genpath('.'))
     fig = uifigure;
     [img,BitDepth] = LoadImages(Imagefolder,ImageSuffix,settings.BitShift,Splitframe_list,settings.FlipLighting,fig);
     if settings.Rotate
         img = rot90(img,settings.Rotate);
     end
-    %Image Cropping
-    if settings.
+
     %Homomorphic Filter
     if settings.ImHFiltBool == "On"
         img = HomomorphicFilter(img,settings.Sigma,settings.Alpha,settings.Beta,BitDepth,fig);
@@ -44,6 +48,13 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     if settings.ImSharpBool == "On"
         img = ImageSharpening(img,settings.SharpenRadius,settings.SharpenAmount,settings.SharpenThreshold,fig);
     end
+
+    %% Calling PIVLab and setting up variables
+    [x,y,u,v,u_filt,v_filt] = PIVlab_commandline(img,settings,SaveDirec);
+    u_filtCat{1,frame_list} = u_filt
+    
+
+    %% Saving processed images
     d = uiprogressdlg(fig,'Title','Please Wait','Message',['Saving Images ' num2str(Splitframe_list(1)) ' to ' num2str(Splitframe_list(end))]...
         ,'Indeterminate','on');
     drawnow
@@ -53,10 +64,6 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     close(d)
     close(fig)
 end
-
-% Calling PIVLab
-[x,y,u,v,u_filt,v_filt] = PIVlab_commandline(img,settings,SaveDirec);
-
 clearvars img
 end
 
