@@ -26,7 +26,8 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     if settings.Rotate
         img = rot90(img,settings.Rotate);
     end
-
+    %Image Cropping
+    if settings.
     %Homomorphic Filter
     if settings.ImHFiltBool == "On"
         img = HomomorphicFilter(img,settings.Sigma,settings.Alpha,settings.Beta,BitDepth,fig);
