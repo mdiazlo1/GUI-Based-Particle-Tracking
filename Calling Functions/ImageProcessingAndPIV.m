@@ -46,7 +46,7 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     d = uiprogressdlg(fig,'Title','Please Wait','Message',['Saving Images ' num2str(Splitframe_list(1)) ' to ' num2str(Splitframe_list(end))]...
         ,'Indeterminate','on');
     drawnow
-    parfor i = 1:numel(Splitframe_list)
+    for i = 1:numel(Splitframe_list)
         imwrite(img(:,:,i),[SaveDirec filesep 'data_' sprintf(['%0' num2str(NumSaveDigits) 'd'],Splitframe_list(i)) '.tif'])
     end
     close(d)
