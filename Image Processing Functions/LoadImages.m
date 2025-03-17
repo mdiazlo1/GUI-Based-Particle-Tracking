@@ -29,9 +29,6 @@ if suffix ~= ".cine"
     FirstImage = imread(fullfile(ImageFolder,ImageNames{1}));
     imgInfo = imfinfo(fullfile(ImageFolder,ImageNames{1}));
     BitDepth = imgInfo.BitDepth;
-    if bitshift == 0
-        bitshift = BitDepth;
-    end
 
     img = zeros([size(FirstImage) numel(idx)],class(FirstImage));
 

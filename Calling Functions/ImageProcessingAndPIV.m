@@ -19,7 +19,7 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     else
         Splitframe_list = frame_list(SplitFrame:end);
     end
-    
+
     addpath(genpath('.'))
     fig = uifigure;
     [img,BitDepth] = LoadImages(Imagefolder,ImageSuffix,settings.BitShift,Splitframe_list,settings.FlipLighting,fig);
@@ -43,14 +43,16 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     if settings.ImSharpBool == "On"
         img = ImageSharpening(img,settings.SharpenRadius,settings.SharpenAmount,settings.SharpenThreshold,fig);
     end
-    d = uiprogressdlg(fig,'Title','Please Wait','Message',['Saving Images ' num2str(Splitframe_list(1)) ' to ' num2str(Splitframe_list(end))]...
-        ,'Indeterminate','on');
-    drawnow
-    for i = 1:numel(Splitframe_list)
-        imwrite(img(:,:,i),[SaveDirec filesep 'data_' sprintf(['%0' num2str(NumSaveDigits) 'd'],Splitframe_list(i)) '.tif'])
+    if SaveDirec
+        d = uiprogressdlg(fig,'Title','Please Wait','Message',['Saving Images ' num2str(Splitframe_list(1)) ' to ' num2str(Splitframe_list(end))]...
+            ,'Indeterminate','on');
+        drawnow
+        for i = 1:numel(Splitframe_list)
+            imwrite(img(:,:,i),[SaveDirec filesep 'data_' sprintf(['%0' num2str(NumSaveDigits) 'd'],Splitframe_list(i)) '.tif'])
+        end
+        close(d)
+        close(fig)
     end
-    close(d)
-    close(fig)
 end
 
 % Calling PIVLab
