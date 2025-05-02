@@ -1,4 +1,5 @@
 function [img, BitDepth] = LoadImages(ImageFolder,suffix,bitshift,frame_list,ImageFlip,fig)
+%[img, BitDepth] = LoadImages(ImageFolder,suffix,bitshift,frame_list,ImageFlip,fig)
 if nargin < 6
     fig = uifigure;
 end
@@ -78,7 +79,8 @@ else
 if ImageFlip
     img = imcomplement(img);
 end
-
+close(d)
+close(fig)
 end
 
 
