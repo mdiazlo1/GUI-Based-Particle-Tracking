@@ -79,8 +79,8 @@ else
 if ImageFlip
     img = imcomplement(img);
 end
-close(d)
-close(fig)
+
+
 end
 
 

@@ -10,9 +10,9 @@ end
 
 % Data Splitting
 if SplitData
-    SizeEachSplit = round(numel(frame_list)/SplitData,-1);
-    if mod(SizeEachSplit,2) == 1
-        SizeEachSplit = SizeEachSplit+1;
+    SizeEachSplit = round(numel(frame_list)/SplitData);
+    if ~rem(SizeEachSplit-frame_list(1),2) 
+        SizeEachSplit = SizeEachSplit-1;
     end
 else
     SizeEachSplit = numel(frame_list);
@@ -35,17 +35,13 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
         img = rot90(img,settings.Rotate);
     end
 
-    %Homomorphic Filter
-    if settings.ImHFiltBool == "On"
-        img = HomomorphicFilter(img,settings.Sigma,settings.Alpha,settings.Beta,BitDepth,fig);
-    end
     %Background Subtraction
     if settings.BgSubBool == "On"
         img = SubtractBackground(img,settings.FrameSkip,settings.RollingWindow,fig);
     end
-    %Image Contrast Adjustment
-    if settings.ImAdjustBool == "On"
-        img = ImageAdjust(img,settings.adjustlow,settings.adjusthigh,settings.gamma,fig);
+    %CLAHE
+    if settings.CLAHE == "On"
+        img = CLAHEProcess(img,fig);
     end
     %Image Sharpening
     if settings.ImSharpBool == "On"
@@ -61,7 +57,7 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
         end
         close(d)
     end
-
+    close(fig)
     %% Calling PIVLab and setting up variables
     [x,y,u,v,u_filt,v_filt] = PIVlab_commandline(img,settings);
 
