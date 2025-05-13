@@ -86,4 +86,7 @@ end
 
 
 close(d)
+if nargin < 6
+    close(fig)
+end
 end
