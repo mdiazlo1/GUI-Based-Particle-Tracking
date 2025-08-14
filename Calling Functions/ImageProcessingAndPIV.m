@@ -34,7 +34,10 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     if settings.Rotate
         img = rot90(img,settings.Rotate);
     end
-
+    %Image culling
+    if settings.ImageCulling
+        img = ImageCulling(img);
+    end
     %Background Subtraction
     if settings.BgSubBool == "On"
         img = SubtractBackground(img,settings.FrameSkip,settings.RollingWindow,fig);
