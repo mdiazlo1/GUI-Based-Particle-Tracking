@@ -22,7 +22,7 @@ SplitCounter = 0;
 for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     SplitCounter = SplitCounter+1;
     if SplitFrame<=numel(frame_list)-SizeEachSplit
-        Splitframe_list = frame_list(SplitFrame:SplitFrame+SizeEachSplit);
+        Splitframe_list = frame_list(SplitFrame+1:SplitFrame+SizeEachSplit);
     else
         Splitframe_list = frame_list(SplitFrame:end);
     end
