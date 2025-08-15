@@ -11,22 +11,21 @@ end
 % Data Splitting
 if SplitData
     SizeEachSplit = round(numel(frame_list)/SplitData);
-    if ~rem(SizeEachSplit-frame_list(1),2) 
-        SizeEachSplit = SizeEachSplit-1;
+    if rem(SizeEachSplit-frame_list(1),2) 
+        SizeEachSplit = SizeEachSplit+1;
     end
 else
     SizeEachSplit = numel(frame_list);
 end
 NumSaveDigits = numel(num2str(frame_list(end)));
-SplitCounter = 0;
+SplitCounter = 0; StartFrame = 0;
 for SplitFrame = 1:SizeEachSplit:numel(frame_list)
-    SplitCounter = SplitCounter+1;
     if SplitFrame<=numel(frame_list)-SizeEachSplit
-        Splitframe_list = frame_list(SplitFrame+1:SplitFrame+SizeEachSplit);
+        Splitframe_list = frame_list(StartFrame+1:StartFrame+SizeEachSplit);
     else
         Splitframe_list = frame_list(SplitFrame:end);
     end
-
+    SplitCounter = SplitCounter+1; StartFrame = Splitframe_list(end)+1;
     %% Image Processing
     addpath(genpath('.'))
     fig = uifigure;
