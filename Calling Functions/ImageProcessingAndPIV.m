@@ -19,7 +19,7 @@ else
 end
 NumSaveDigits = numel(num2str(frame_list(end)));
 SplitCounter = 0; StartFrame = 0;
-for SplitFrame = 1:SizeEachSplit:numel(frame_list)
+for SplitFrame = 1:SizeEachSplit:numel(frame_list)-SizeEachSplit
     if SplitFrame<=numel(frame_list)-SizeEachSplit
         Splitframe_list = frame_list(StartFrame+1:StartFrame+SizeEachSplit);
     else
