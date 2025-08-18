@@ -63,7 +63,7 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)-SizeEachSplit
     %% Calling PIVLab and setting up variables
     [x,y,u,v,u_filt,v_filt] = PIVlab_commandline(img,settings);
 
-    save([SaveDirecAnalyzed '\Data_Split\SplitData_' num2str(SplitCounter) '.mat'],'x','y','u','v','u_filt','v_filt')
+    save([SaveDirecAnalyzed '\Data_Split\SplitData_' sprintf(['%0' num2str(2) 'd'],SplitCounter) '.mat'],'x','y','u','v','u_filt','v_filt')
 
 end
 clearvars img
