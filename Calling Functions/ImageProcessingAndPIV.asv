@@ -11,9 +11,9 @@ end
 % Data Splitting
 if SplitData
     SizeEachSplit = round(numel(frame_list)/SplitData);
-    if rem(SizeEachSplit,2) 
-        SizeEachSplit = SizeEachSplit+1;
-    end
+    % if rem(SizeEachSplit-frame_list(1),2) 
+    %     SizeEachSplit = SizeEachSplit+1;
+    % end
 else
     SizeEachSplit = numel(frame_list);
 end

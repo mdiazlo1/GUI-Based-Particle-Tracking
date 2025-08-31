@@ -1,3 +1,5 @@
+In image culling function, need to change it so that if image that it is culling is the last image it doesn't try to cull an image that doesn't exist (i.e at the end of the image array)
+
 Different tabs for different processes. Only show tab if option for that process is turned on:
 
 https://www.mathworks.com/matlabcentral/answers/251870-is-there-a-way-to-hide-a-specific-uitab
