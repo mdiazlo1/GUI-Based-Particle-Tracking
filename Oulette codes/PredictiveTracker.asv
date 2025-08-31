@@ -1,4 +1,4 @@
-function [vtracks,ntracks,meanlength,rmslength,tracks] = PredictiveTracker(x,y,t,ang,max_disp,minarea)
+function [vtracks,ntracks,meanlength,rmslength,tracks] = PredictiveTracker(x,y,t,ang,max_disp)
 % Usage: [vtracks,ntracks,meanlength,rmslength] = PredictiveTracker(inputnames,threshold,max_disp,[bground_name],[minarea],[invert],[noisy])
 % Given a movie of particle motions, PredictiveTracker produces Lagrangian
 % particle tracks using a predictive three-frame best-estimate algorithm.
@@ -119,8 +119,7 @@ for t = 2:Nf
             prior(ii,1) = tr.X(end-1);
             prior(ii,2) = tr.Y(end-1);
         else
-            prior(ii,:) = now(ii,:); % Sets prior = now so that velocity calculated in lines below is 0 effectively turning
-            %the algorithm into a nearest neighbor approach. 
+            prior(ii,:) = now(ii,:);
         end
     end
 

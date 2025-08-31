@@ -194,8 +194,7 @@ for ii=1:Nf
     tt=tmin+ii-1; % current time
     switch movtype
         case('Loaded Images')
-            im = inputnames;
-            clearvars im
+            
         case('avi')
             [im,mark] = read_uncompressed_avi( ...
                 fullfile(filepath,names.name),tt,mark);
