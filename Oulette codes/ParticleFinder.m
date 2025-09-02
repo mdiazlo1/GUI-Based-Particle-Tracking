@@ -87,15 +87,16 @@ end
 % -=- Decide whether avi, stack, or images; set up -=---------------------
 % Miguel added part that decides if images are sent directly already
 % loaded.
-if ismatrix(inputnames)
+if ~(ischar(inputnames) || isstring(inputnames))
     movtype = 'Pre-Loaded Images';
+    ImageClass = class(inputnames);
     switch ImageClass
         case 'uint8'
             color_depth = 2^8-1;
         case 'uint16'
             color_depth = 2^16-1;
     end
-    ht = size(img,1); wd = size(img,2);
+    ht = size(inputnames,1); wd = size(inputnames,2);
     tmin = framerange(1); tmax = framerange(end);   
 else
     [filepath,junk,ext]=fileparts(inputnames);
@@ -146,7 +147,11 @@ else
         names = names( (tt>=tmin) & (tt<=tmax) );
     end
 end
-Nf=tmax-tmin+1; % frame count
+if tmin == 0
+    Nf = tmax-tmin;
+else
+    Nf=tmax-tmin+1; % frame count
+end
 
 % -=- Pre-compute logarithms for locating particle centers -=-------------
 if arealim==1
@@ -193,9 +198,9 @@ mark=[];
 for ii=1:Nf
     tt=tmin+ii-1; % current time
     switch movtype
-        case('Loaded Images')
-            im = inputnames;
-            clearvars im
+        case('Pre-Loaded Images')
+            im = inputnames(:,:,ii);
+            im = double(im);
         case('avi')
             [im,mark] = read_uncompressed_avi( ...
                 fullfile(filepath,names.name),tt,mark);
@@ -205,19 +210,13 @@ for ii=1:Nf
         case('images')
             im = double(imread(fullfile(filepath,names(ii).name)));
     end % switch movtype
-    if ndims(im)==3
-        if size(im,3)>3
-            error('Sorry, only grayscale and RGB images are supported.')
-        end
-        im=round(mean(im,3)); % convert to grayscale if necessary
-    end
-    if invert==1 % dark particles on light background
-        im = background - im;
-    elseif invert==0 % light particles on dark background
-        im = im - background;
-    else
-        im = abs( im - background ); % seek any contrast, light or dark
-    end
+    % if ndims(im)==3
+    %     if size(im,3)>3
+    %         error('Sorry, only grayscale and RGB images are supported.')
+    %     end
+    %     im=round(mean(im,3)); % convert to grayscale if necessary
+    % end
+    
     im(im<0) = 0;
     if arealim==1
         pos = FindParticles(im,threshold,logs);

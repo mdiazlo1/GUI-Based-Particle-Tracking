@@ -1,4 +1,4 @@
-function [vtracks,ntracks,meanlength,rmslength,tracks] = PredictiveTracker(x,y,t,ang,max_disp)
+function [vtracks,ntracks,meanlength,rmslength,tracks] = PredictiveTracker(x,y,t,ang,max_disp,minarea,ExpInitialDisplacement)
 % Usage: [vtracks,ntracks,meanlength,rmslength] = PredictiveTracker(inputnames,threshold,max_disp,[bground_name],[minarea],[invert],[noisy])
 % Given a movie of particle motions, PredictiveTracker produces Lagrangian
 % particle tracks using a predictive three-frame best-estimate algorithm.
@@ -55,11 +55,31 @@ function [vtracks,ntracks,meanlength,rmslength,tracks] = PredictiveTracker(x,y,t
 % 6 March 2012.
 % Offloaded particle finding to ParticleFinder.m, 7 March 2012.
 
+%%%%%%%%%%%    Changes made by Miguel  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Heavily modified by Miguel to make it so you can send pre-loaded images
 %and particle finder data directly. 2025
 
+%Also added ExpInitialDisplacement (Expected Initial Displacement) this is
+%to scurry around the nearest neighbor approach for the first iteration
+%just in case you have an expected velocity that is far from the initial
+%point where nearest neighbor would fail. Keep empty "[]" if you don't need
+%this option.
+
+%Also modified the code to add WeightedDistAmplification (Weighted Distance
+%Amplification). Basically this is if you have an expected direction of the
+%flow (such as in channel flow). Apply a higher weight to the direction you
+%want to suppress (since it adds weight to the cost function). For example,
+%for wall bounded flow, with streamwise in x and wall-normal in y you might
+%want to add a Weighted Distance Amplification of [1 1.5]. Keep in mind the
+%cost function is compared with the max displacement you put so don't go
+%crazy with the amplification. If you don't need this then keep as empty
+%[].
+
 filterwidth = 1; fitwidth = 3; % parameters for the differentiation kernel
 
+if ~exist('ExpInitialDisplacement','var') || isempty(ExpInitialDisplacement)
+    ExpInitialDisplacement=0;
+end
 [tt,ends]=unique(t);
 begins=circshift(ends,[1 0])+1;
 begins(1)=1;
@@ -119,12 +139,19 @@ for t = 2:Nf
             prior(ii,1) = tr.X(end-1);
             prior(ii,2) = tr.Y(end-1);
         else
-            prior(ii,:) = now(ii,:);
+            prior(ii,:) = now(ii,:); % Sets prior = now so that velocity calculated in lines below is 0 effectively turning
+            %the algorithm into a nearest neighbor approach. 
         end
     end
 
     % estimate a velocity for each particle in fr0
     velocity = now - prior;
+    if any(ExpInitialDisplacement)
+        idx = find(ismember(velocity,[0 0],'row'));
+        for i = 1:numel(idx)
+            velocity(idx(i),:) = ExpInitialDisplacement;
+        end
+    end
     % and use kinematics to estimate a future position
     estimate = now + velocity;
 
@@ -136,8 +163,9 @@ for t = 2:Nf
         % loop over active tracks
         for ii = 1:n_active
             % now, compare this estimated positions with particles in fr1
-            dist_fr1 = (estimate(ii,1)-fr1(:,1)).^2 + (estimate(ii,2)-fr1(:,2)).^2;
-            
+            dist_fr1 = WeightedDistAmplification(1)*(estimate(ii,1)-fr1(:,1)).^2 ...
+                + WeightedDistAmplification(2)*(estimate(ii,2)-fr1(:,2)).^2;
+
             % save its cost and best match
             costs(ii) = min(dist_fr1);
             if costs(ii) > max_disp^2
@@ -264,92 +292,6 @@ for ii = 1:ntracks
     end
 end
 
-% -=- Plot if requested -=------------------------------------------------
-if noisy
-    if isnumeric(noisy) && noisy>1
-        disp(['Plotting and saving frames. ' ...
-            'Plese do not cover the figure window!'])
-        if exist(savedirname,'file')~=7
-            mkdir(savedirname)
-        end
-    else
-        disp('Plotting...')
-    end
-    defaultpos=get(0,'DefaultFigurePosition');
-    figure('units','pixels','position',[defaultpos(1:2) figsize]);
-    axes('nextplot','add','dataaspectratio',[1 1 1],'ydir','reverse');
-    title([num2str(ntracks) ' particle tracks: mean length ' ...
-        num2str(meanlength) ' frames, rms length ' num2str(rmslength) ...
-        ' frames'])
-    xlabel([inputnames ', threshold = ' num2str(threshold) ...
-        ', max_disp = ' num2str(max_disp) ', ' bground_name ...
-        ', minarea = ' num2str(minarea) ', invert = ' num2str(invert)], ...
-        'interpreter','none');
-    [filepath,junk,ext]=fileparts(inputnames);
-    names=dir(inputnames);
-    if strcmpi(ext,'.avi')
-        [im,mark] = read_uncompressed_avi(fullfile(filepath,names.name),1); % use mark just to keep it quiet
-        im = im.cdata;
-        mark=[]; % but discard mark to start over
-    elseif numel(names)==1 && ( strcmpi(ext,'.tif') || ...
-            strcmpi(ext,'.tiff') || strcmpi(ext,'.gif') ) % single file, looks like an image stack
-        im = imread(fullfile(filepath,names.name),1);
-    else
-        for ii=1:Nf
-            if strcmp(fullfile(filepath,names(ii).name),bground_name)
-                names(ii)=[]; % don't try to track the background file
-                break
-            end
-        end
-            im = imread(fullfile(filepath,names(1).name));
-    end % if strcmpi(ext,'.avi')
-    hi=imagesc(im);
-    xlim(0.5+[0 size(im,2)]);
-    ylim(0.5+[0 size(im,1)]);
-    colormap(gray); % has no effect if image is color b/c RGB values override
-    colorlist=get(gca,'colororder');
-    Ncolors=size(colorlist,1);
-    framerange=NaN(ntracks,2);
-    for jj=1:ntracks
-        framerange(jj,1)=vtracks(jj).T(1);
-        framerange(jj,2)=vtracks(jj).T(end);
-    end
-    for ii=1:Nf-fitwidth
-        np=0;
-        delete(findobj(gca,'type','line'))
-        ind = find( (framerange(:,1)<=ii) & (framerange(:,2)>=ii) );
-        for jj=1:numel(ind)
-            col=colorlist(mod(ind(jj)-1,Ncolors)+1,:);
-            indt=1:(ii-framerange(ind(jj),1)+1); % plot from beginning of track to current frame
-            plot(vtracks(ind(jj)).X(indt),vtracks(ind(jj)).Y(indt), ...
-                '-','color',col);
-            np=np+1;
-        end
-        if strcmpi(ext,'.avi')
-            [im,mark] = read_uncompressed_avi( ...
-                fullfile(filepath,names.name),ii,mark);
-            set(hi,'cdata',im.cdata);
-            set(gcf,'name',[num2str(np) ' particles in ' names.name ...
-                ' (' num2str(ii) ' of ' num2str(Nf) ')']); 
-        elseif numel(names)==1 && ( strcmpi(ext,'.tif') || ...
-                strcmpi(ext,'.tiff') || strcmpi(ext,'.gif') ) % single file, looks like an image stack
-            set(hi,'cdata',imread(fullfile(filepath,names.name),ii)); 
-            set(gcf,'name',[num2str(np) ' particles in ' names.name ...
-                ' (' num2str(ii) ' of ' num2str(Nf) ')']); 
-        else
-            set(hi,'cdata',imread(fullfile(filepath,names(ii).name))); 
-            set(gcf,'name',[num2str(np) ' particles in ' names(ii).name ...
-                ' (' num2str(ii) ' of ' num2str(Nf) ')']); 
-        end % if strcmpi(ext,'.avi')
-        drawnow
-        pause(pausetime); 
-        if isnumeric(noisy) && noisy>1
-            snap=getframe(gca);
-            imwrite(snap.cdata, ...
-                fullfile(filepath,savedirname,names(ii).name)); 
-        end 
-    end
-end
 disp('Done.')
 
 end
