@@ -75,6 +75,12 @@ function [vtracks,ntracks,meanlength,rmslength,tracks] = PredictiveTracker(x,y,t
 %crazy with the amplification. If you don't need this then keep as empty
 %[] or as [1 1].
 
+%Also made it so that max_displacement is now also directional. If you want
+%it to be directional, input as a vector [x y]. Otherwise just keep it as a
+%single number to keep it radial. Cost function is still calculated using
+%radial displacement this is just as a final cutoff to throw anything away
+%that goes past this threshold.
+
 filterwidth = 1; fitwidth = 2; % parameters for the differentiation kernel
 
 if ~exist('ExpInitialDisplacement','var') || isempty(ExpInitialDisplacement)
@@ -166,19 +172,34 @@ for t = 2:Nf
         % loop over active tracks
         for ii = 1:n_active
             % now, compare this estimated positions with particles in fr1
-            dist_fr1 = WeightedDistAmplification(1)*(estimate(ii,1)-fr1(:,1)).^2 ...
-                + WeightedDistAmplification(2)*(estimate(ii,2)-fr1(:,2)).^2;
+            dist_fr1X = (estimate(ii,1)-fr1(:,1)).^2; dist_fr1Y = (estimate(ii,2)-fr1(:,2)).^2;
+
+            dist_fr1 = WeightedDistAmplification(1)*dist_fr1X.^2 ...
+                + WeightedDistAmplification(2)*dist_fr1Y.^2;
 
             % save its cost and best match
             costs(ii) = min(dist_fr1);
-            if costs(ii) > max_disp^2
-                continue;
+            if isscalar(max_disp)
+                if costs(ii) > max_disp^2
+                    continue;
+                end
+            elseif isvector(max_disp)
+                if costs(ii) > max_disp(1)^2+max_disp(2)^2
+                    continue;
+                end
             end
             bestmatch = find(dist_fr1 == costs(ii));
             % if there is more than one best match, we are confused; stop
             if numel(bestmatch) ~= 1
                 continue;
             end
+            %Check match to see if it surpasses criterion for max_disp vec
+            if isvector(max_disp)
+                if dist_fr1X(bestmatch) > max_disp(1) || dist_fr1Y(bestmatch) > max_disp(2)
+                    continue
+                end
+            end
+           
             % has another track already matched to this particle?
             ind = links == bestmatch;
             if sum(ind) ~= 0
