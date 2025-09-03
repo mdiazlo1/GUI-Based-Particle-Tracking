@@ -1,8 +1,13 @@
-function ImageProcessingAndTracking(settings,Imagefolder,ImageSuffix,frame_list,SplitData,SaveDirec)
+function ImageProcessingAndTracking(settings,Imagefolder,ImageSuffix,frame_list,SplitData,SaveDirecImages,SaveDirecAnalyzed)
 %[vtracks,tracks] = ImageProcessingAndTrackingCalling(settings,Imagefolder,ImageSuffix,frame_list,SplitData,SaveDirec)
 % For this function to work you have to specify a frame_list. Settings.mat file
 %can be generated from the GUI for settings. SplitData value is how many
 %times you want to split the frame_list so you don't overload the ram.
+
+if ~exist([SaveDirecAnalyzed '\Data_Split'],'dir')
+    mkdir([SaveDirecAnalyzed '\Data_Split'])
+end
+
 if SplitData
     SizeEachSplit = round(numel(frame_list)/SplitData,-2)+1;
 else
@@ -42,11 +47,13 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
     d = uiprogressdlg(fig,'Title','Please Wait','Message',['Saving Images ' num2str(Splitframe_list(1)) ' to ' num2str(Splitframe_list(end))]...
         ,'Indeterminate','on');
     drawnow
-    parfor i = 1:numel(Splitframe_list)
-        imwrite(img(:,:,i),[SaveDirec filesep 'data_' sprintf(['%0' num2str(NumSaveDigits) 'd'],Splitframe_list(i)) '.tif'])
+    if ~isnumeric(SaveDirecImages)
+        parfor i = 1:numel(Splitframe_list)
+            imwrite(img(:,:,i),[SaveDirecImages filesep 'data_' sprintf(['%0' num2str(NumSaveDigits) 'd'],Splitframe_list(i)) '.tif'])
+        end
     end
     % -=- Find particles in all frames -=-------------------------------------
-    [x,y,t,ang]=ParticleFinder(img,settings.threshold,Splitframe_list,[],[],arealim,invert,0);
+    [x,y,t,ang]=ParticleFinder(img,settings.threshold,Splitframe_list,[],[],settings.arealim,0,0);
     save([SaveDirecAnalyzed '\Data_Split\SplitData_' sprintf(['%0' num2str(2) 'd'],SplitCounter) '.mat'],'x','y','t','ang')
 
     close(d)
@@ -70,13 +77,14 @@ end
 x = cat(1,xCat{:}); y = cat(1,yCat{:});
 t = cat(1,tCat{:}); ang = cat(1,angCat{:}); 
 
-save([filepaths.analyzeddir '\ParticleFinder_Data.mat'],"x","y","t","ang",'-v7.3')
+save([SaveDirecAnalyzed '\ParticleFinder_Data.mat'],"x","y","t","ang",'-v7.3')
 clearvars xCat yCat tCat angCat
 %% Perform tracking
 %Tracking
-[vtracks,~,~,~,tracks] = PredictiveTracker(x,y,t,ang,settings.max_disp,settings.minarea);
+[vtracks,~,~,~,tracks] = PredictiveTracker(x,y,t,ang,settings.max_disp,...
+    settings.arealim,settings.ExpInitialDisplacement,settings.WeightedDistAmplification);
 
-save([filepaths.analyzeddir '\ParticleTracking_Data.mat'],'vtracks','tracks','-v7.3')
+save([SaveDirecAnalyzed '\ParticleTracking_Data.mat'],'vtracks','tracks','-v7.3')
 end
 
 
