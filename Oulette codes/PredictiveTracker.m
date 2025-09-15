@@ -1,4 +1,5 @@
-function [vtracks,ntracks,meanlength,rmslength,tracks] = PredictiveTracker(x,y,t,ang,max_disp,minarea,ExpInitialDisplacement, WeightedDistAmplification)
+function [vtracks,ntracks,meanlength,rmslength,tracks] = PredictiveTracker(x,y,t,ang,max_disp,minarea, ...
+    ExpInitialDisplacement, WeightedDistAmplification,VelCalcMethod)
 % Usage: [vtracks,ntracks,meanlength,rmslength] = PredictiveTracker(inputnames,threshold,max_disp,[bground_name],[minarea],[invert],[noisy])
 % Given a movie of particle motions, PredictiveTracker produces Lagrangian
 % particle tracks using a predictive three-frame best-estimate algorithm.
@@ -32,25 +33,25 @@ function [vtracks,ntracks,meanlength,rmslength,tracks] = PredictiveTracker(x,y,t
 % with .avi movies. This file can be downloaded from
 % http://leviathan.eng.yale.edu/software.
 
-% Written by Nicholas T. Ouellette September 2010. 
-% Updated by Douglas H. Kelley 13 April 2011 to plot tracks. 
-% Fixed bug in accounting active tracks 14 April 2011. 
-% Allowed for inputnames and/or bground_name in other directory, 4 May 
-% 2011. 
-% Fixed minor bug providing default input parameters 27 May 2011. 
-% Added movie with overlaid velocity quivers 17 August 2011. 
-% Added "finder" option 18 August 2011. 
+% Written by Nicholas T. Ouellette September 2010.
+% Updated by Douglas H. Kelley 13 April 2011 to plot tracks.
+% Fixed bug in accounting active tracks 14 April 2011.
+% Allowed for inputnames and/or bground_name in other directory, 4 May
+% 2011.
+% Fixed minor bug providing default input parameters 27 May 2011.
+% Added movie with overlaid velocity quivers 17 August 2011.
+% Added "finder" option 18 August 2011.
 % Changed "finder" to "minarea", added "invert" option, and combined two
-% plots into one 1 September 2011. 
-% Enabled noisy>1 for saving a movie 2 September 2011. 
-% Added "Theta" field (if minarea~=1) 7 September 2011. 
-% Made compatible with uncompressed avi movies (using 
-% read_uncompressed_avi.m) 19 October 2011. 
-% Changed plotting method to use color and show only active tracks, 9 
-% January 2012. 
-% Improved compatibility with images having more than 255 grays, 10 
-% January 2012. 
-% Made compatible with tiff and gif stacks 13 February 2012. 
+% plots into one 1 September 2011.
+% Enabled noisy>1 for saving a movie 2 September 2011.
+% Added "Theta" field (if minarea~=1) 7 September 2011.
+% Made compatible with uncompressed avi movies (using
+% read_uncompressed_avi.m) 19 October 2011.
+% Changed plotting method to use color and show only active tracks, 9
+% January 2012.
+% Improved compatibility with images having more than 255 grays, 10
+% January 2012.
+% Made compatible with tiff and gif stacks 13 February 2012.
 % Fixed bugs associated with frames in which no particles are found,
 % 6 March 2012.
 % Offloaded particle finding to ParticleFinder.m, 7 March 2012.
@@ -81,7 +82,24 @@ function [vtracks,ntracks,meanlength,rmslength,tracks] = PredictiveTracker(x,y,t
 %radial displacement this is just as a final cutoff to throw anything away
 %that goes past this threshold.
 
-filterwidth = 1; fitwidth = 2; % parameters for the differentiation kernel
+%Added ability to add vector for initial displacement. The code will take
+%the bounds of the vector and evenly distribute it linearly across the dimension that
+%it's made for and take that for the initial displacement.
+
+%Added ability to use other methods for calculating the velocity
+
+%% Defining options
+if ~exist('VelCalcMethod','var') || isempty(ExpInitialDisplacement)
+    VelCalcMethod = 'Original';
+    filterwidth = 1; fitwidth = 3; % parameters for the differentiation kernel
+elseif contains(VelCalcMethod,'Polynomial fit')
+    fitwidth = 2; NumCoeff = 4; %Fit to a 4th order polynomial
+    error('Not Available yet')
+elseif contains(VelCalcMethod,'Convolution')
+    fitwidth = str2double(VelCalcMethod(13:end));
+else
+    error('This Velocity Calculation Method is not a valid choice')
+end
 
 if ~exist('ExpInitialDisplacement','var') || isempty(ExpInitialDisplacement)
     ExpInitialDisplacement=0;
@@ -89,9 +107,12 @@ end
 if ~exist('WeightedDistAmplification','var') || isempty(WeightedDistAmplification)
     WeightedDistAmplification=[1 1];
 end
+%% Starting calculations
 [tt,ends]=unique(t);
+FrameNum = t;
 begins=circshift(ends,[1 0])+1;
 begins(1)=1;
+%begins and ends just help to specify number of particles in each frame
 Nf=numel(tt);
 if Nf < (2*fitwidth+1)
     error(['Sorry, found too few files named ' inputnames '.'])
@@ -124,18 +145,18 @@ disp(['    Total number of tracks: ' num2str(numel(tracks),'%.0f')])
 
 % -=- Loop over frames -=-------------------------------------------------
 for t = 2:Nf
-    ind=begins(t):ends(t);
+    ind=begins(t):ends(t)-1;
     nfr1 = numel(ind);
     if nfr1==0
         warning('MATLAB:PredictiveTracker:noParticles', ...
             ['Found no particles in frame ' num2str(t) '.']);
     end % if nfr1==0
-    fr1=[x(ind) y(ind)];
+    fr1=[x(ind) y(ind)]; %positions of all particles in this frame
     if minarea~=1
         ang1=ang(ind);
     end
 
-% -=- Match the tracks with kinematic predictions -=----------------------
+    % -=- Match the tracks with kinematic predictions -=----------------------
 
     % for convenience, we'll grab the relevant positions from the tracks
     now = zeros(n_active,2);
@@ -149,16 +170,35 @@ for t = 2:Nf
             prior(ii,2) = tr.Y(end-1);
         else
             prior(ii,:) = now(ii,:); % Sets prior = now so that velocity calculated in lines below is 0 effectively turning
-            %the algorithm into a nearest neighbor approach. 
+            %the algorithm into a nearest neighbor approach.
         end
     end
 
     % estimate a velocity for each particle in fr0
     velocity = now - prior;
-    if any(ExpInitialDisplacement)
+
+    if isstruct(ExpInitialDisplacement)
         idx = find(ismember(velocity,[0 0],'row'));
-        for i = 1:numel(idx)
-            velocity(idx(i),:) = ExpInitialDisplacement;
+        u_tau = ExpInitialDisplacement.u_tau; dperPix = ExpInitialDisplacement.dperPix;
+        f_Hz = ExpInitialDisplacement.f_Hz; nu = ExpInitialDisplacement.nu;
+            for i = 1:numel(idx)
+                K = 0.41; B = 5;
+                y_plus = abs(740-now(idx(i),2)).*dperPix*u_tau/nu;
+                WallProfile = @(U_plus) U_plus+exp(-K*B)*(exp(K*U_plus)-1-K*U_plus-0.5*(K*U_plus)^2)-y_plus;
+                %Profile taken from "A universal velocity profile for turbulent
+                %wall flows including adverse pressure gradient boundary layers"
+                %by Subrahmanyam, M. A. et al. (2022)
+                IniGuess = fzero(WallProfile,0.006);
+                IniGuess = -IniGuess*u_tau/(dperPix*f_Hz);
+
+                velocity(idx(i),1) = IniGuess;
+            end
+    else
+        if any(ExpInitialDisplacement)
+            idx = find(ismember(velocity,[0 0],'row'));
+            for i = 1:numel(idx)
+                velocity(idx(i),:) = ExpInitialDisplacement;
+            end
         end
     end
     % and use kinematics to estimate a future position
@@ -171,11 +211,14 @@ for t = 2:Nf
     if nfr1>0
         % loop over active tracks
         for ii = 1:n_active
+            if t == 2
+                continue
+            end
             % now, compare this estimated positions with particles in fr1
             dist_fr1X = (estimate(ii,1)-fr1(:,1)).^2; dist_fr1Y = (estimate(ii,2)-fr1(:,2)).^2;
 
-            dist_fr1 = WeightedDistAmplification(1)*dist_fr1X.^2 ...
-                + WeightedDistAmplification(2)*dist_fr1Y.^2;
+            dist_fr1 = WeightedDistAmplification(1)*dist_fr1X ...
+                + WeightedDistAmplification(2)*dist_fr1Y;
 
             % save its cost and best match
             costs(ii) = min(dist_fr1);
@@ -195,11 +238,11 @@ for t = 2:Nf
             end
             %Check match to see if it surpasses criterion for max_disp vec
             if isvector(max_disp)
-                if dist_fr1X(bestmatch) > max_disp(1) || dist_fr1Y(bestmatch) > max_disp(2)
+                if dist_fr1X(bestmatch) > max_disp(1)^2 || dist_fr1Y(bestmatch) > max_disp(2)^2
                     continue
                 end
             end
-           
+
             % has another track already matched to this particle?
             ind = links == bestmatch;
             if sum(ind) ~= 0
@@ -216,19 +259,21 @@ for t = 2:Nf
         % now attach the matched particles to their tracks
         matched = zeros(nfr1,1);
         for ii = 1:n_active
-            if links(ii) ~= 0 
+            if links(ii) ~= 0
                 % this track found a match
                 tracks(active(ii)).X(end+1) = fr1(links(ii),1);
                 tracks(active(ii)).Y(end+1) = fr1(links(ii),2);
                 tracks(active(ii)).len = tracks(active(ii)).len + 1;
-                tracks(active(ii)).T(end+1) = t;
+                tracks(active(ii)).T(end+1) = FrameNum(begins(t));
                 if minarea~=1
                     tracks(active(ii)).Theta(end+1) = ang1(links(ii));
                 end
                 matched(links(ii)) = 1;
             end
         end
-        active = active(links~=0);
+        if t ~= 2
+            active = active(links~=0);
+        end
 
         % and start new tracks with the particles in fr1 that found no match
         unmatched = find(matched == 0);
@@ -237,14 +282,14 @@ for t = 2:Nf
                 numel(unmatched),1);
             for ii = 1:numel(unmatched)
                 newtracks(ii) = struct('len',1,'X',fr1(unmatched(ii),1),...
-                    'Y',fr1(unmatched(ii),2),'T',t);
+                    'Y',fr1(unmatched(ii),2),'T',FrameNum(begins(t)));
             end
         else
             newtracks = repmat(struct('len',[],'X',[],'Y',[],'T',[], ...
                 'Theta',[]),numel(unmatched),1);
             for ii = 1:numel(unmatched)
                 newtracks(ii) = struct('len',1,'X',fr1(unmatched(ii),1),...
-                    'Y',fr1(unmatched(ii),2),'T',t,'Theta',ang1(unmatched(ii)));
+                    'Y',fr1(unmatched(ii),2),'T',FrameNum(begins(t)),'Theta',ang1(unmatched(ii)));
             end
         end
     else % if nfr1>0
@@ -252,7 +297,7 @@ for t = 2:Nf
         newtracks=[];
         unmatched=[];
     end
-    
+
     active = [active (numel(tracks)+1):(numel(tracks)+numel(newtracks))];
     tracks = [tracks ; newtracks];
     if numel(tracks)>1e6
@@ -280,41 +325,47 @@ rmslength = sqrt(mean([tracks.len].^2));
 
 % -=- Compute velocities -=-----------------------------------------------
 disp('Differentiating...');
+if contains(VelCalcMethod,'Original')
+    % define the convolution kernel
+    Av = 1.0/(0.5*filterwidth^2 * ...
+        (sqrt(pi)*filterwidth*erf(fitwidth/filterwidth) - ...
+        2*fitwidth*exp(-fitwidth^2/filterwidth^2)));
+    vkernel = -fitwidth:fitwidth;
+    vkernel = Av.*vkernel.*exp(-vkernel.^2./filterwidth^2);
 
-% define the convolution kernel
-Av = 1.0/(0.5*filterwidth^2 * ...
-    (sqrt(pi)*filterwidth*erf(fitwidth/filterwidth) - ...
-    2*fitwidth*exp(-fitwidth^2/filterwidth^2)));
-vkernel = -fitwidth:fitwidth;
-vkernel = Av.*vkernel.*exp(-vkernel.^2./filterwidth^2);
-
-% loop over tracks
-if minarea==1
-    vtracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[],'V',[]),ntracks,1);
-else
-    vtracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[], ...
-        'V',[],'Theta',[]),ntracks,1);
-end
-for ii = 1:ntracks
-    u = -conv(tracks(ii).X,vkernel,'valid');
-    v = -conv(tracks(ii).Y,vkernel,'valid');
+    % loop over tracks
     if minarea==1
-        vtracks(ii) = struct('len',tracks(ii).len - 2*fitwidth, ...
-            'X',tracks(ii).X(fitwidth+1:end-fitwidth), ...
-            'Y',tracks(ii).Y(fitwidth+1:end-fitwidth), ...
-            'T',tracks(ii).T(fitwidth+1:end-fitwidth), ...
-            'U',u, ...
-            'V',v);
+        vtracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[],'V',[]),ntracks,1);
     else
-        vtracks(ii) = struct('len',tracks(ii).len - 2*fitwidth, ...
-            'X',tracks(ii).X(fitwidth+1:end-fitwidth), ...
-            'Y',tracks(ii).Y(fitwidth+1:end-fitwidth), ...
-            'T',tracks(ii).T(fitwidth+1:end-fitwidth), ...
-            'U',u, ...
-            'V',v, ...
-            'Theta',tracks(ii).Theta(fitwidth+1:end-fitwidth));
+        vtracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[], ...
+            'V',[],'Theta',[]),ntracks,1);
     end
+    for ii = 1:ntracks
+        u = -conv(tracks(ii).X,vkernel,'valid');
+        v = -conv(tracks(ii).Y,vkernel,'valid');
+        if minarea==1
+            vtracks(ii) = struct('len',tracks(ii).len - 2*fitwidth, ...
+                'X',tracks(ii).X(fitwidth+1:end-fitwidth), ...
+                'Y',tracks(ii).Y(fitwidth+1:end-fitwidth), ...
+                'T',tracks(ii).T(fitwidth+1:end-fitwidth), ...
+                'U',u, ...
+                'V',v);
+        else
+            vtracks(ii) = struct('len',tracks(ii).len - 2*fitwidth, ...
+                'X',tracks(ii).X(fitwidth+1:end-fitwidth), ...
+                'Y',tracks(ii).Y(fitwidth+1:end-fitwidth), ...
+                'T',tracks(ii).T(fitwidth+1:end-fitwidth), ...
+                'U',u, ...
+                'V',v, ...
+                'Theta',tracks(ii).Theta(fitwidth+1:end-fitwidth));
+        end
+    end
+elseif contains(VelCalcMethod,'Polynomial fit')
+    error('Not Available yet')
+elseif contains(VelCalcMethod,'Convolution')
+    vtracks = gausdif012_Oulette_func(tracks,fitwidth);
 end
+
 
 disp('Done.')
 

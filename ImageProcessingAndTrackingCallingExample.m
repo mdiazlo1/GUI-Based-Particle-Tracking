@@ -1,4 +1,4 @@
-function [vtracks,tracks] = ImageProcessingAndTrackingCalling(settings,Imagefolder,ImageSuffix,frame_list,SplitData,SaveDirec)
+function [vtracks,tracks] = ImageProcessingAndTrackingCallingExample(settings,Imagefolder,ImageSuffix,frame_list,SplitData,SaveDirec)
 %[vtracks,tracks] = ImageProcessingAndTrackingCalling(settings,Imagefolder,ImageSuffix,frame_list,SplitData,SaveDirec)
 % For this function to work you have to specify a frame_list. Settings.mat file
 %can be generated from the GUI for settings. SplitData value is how many

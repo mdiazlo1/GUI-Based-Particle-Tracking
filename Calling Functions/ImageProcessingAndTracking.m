@@ -61,7 +61,7 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)
 end
 clearvars img x t y ang
 %% Concatenate Split Data Files to one file
-SplitDataFiles = dir([filepaths.analyzeddir '\Data_Split']); 
+SplitDataFiles = dir([SaveDirecAnalyzed '\Data_Split']); 
 NumFiles = numel(SplitDataFiles);
 
 xCat = cell(1,NumFiles-2); yCat = cell(1,NumFiles-2);
