@@ -35,8 +35,15 @@ else
     drawnow
 %     csum = sum(double(img(:,:,1:frameskip:size(img,3))),3);
 %     img_bg = csum./numel(img);
-    img_bg = mean(double(img(:,:,1:frameskip:size(img,3))),3);
-    imgBgSub = double(img)-img_bg;
+    img = double(img);
+    img_bg = mean(img(:,:,1:frameskip:size(img,3)),3);
+    %Splitting up background subtraction into two parts for the sake of
+    %memory bandwidth
+    % imgBgSub(:,:,1:round(size(img,3)/2)) = double(img(:,:,1:round(size(img,3)/2)))-img_bg;
+    % img(:,:,1:round(size(img,3)/2)) = [];
+    % 
+    % imgBgSub(:,:,round(size(img,3)/2)+1:end) = double(img)-img_bg;
+    imgBgSub = img-img_bg;
     clearvars -except imgBgSub classtype d
     imgBgSub = cast(imgBgSub,classtype);
     % BgTypical = cast(img_bg,classtype);

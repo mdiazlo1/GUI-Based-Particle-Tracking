@@ -23,9 +23,12 @@ for SplitFrame = 1:SizeEachSplit:numel(frame_list)-SizeEachSplit
     if SplitFrame<=numel(frame_list)-SizeEachSplit
         Splitframe_list = frame_list(StartFrame+1:StartFrame+SizeEachSplit);
     else
-        Splitframe_list = frame_list(SplitFrame:end);
+        Splitframe_list = frame_list(StartFrame:end);
     end
-    SplitCounter = SplitCounter+1; StartFrame = Splitframe_list(end)+1;
+    SplitCounter = SplitCounter+1; StartFrame = Splitframe_list(end);
+    if frame_list(1) == 0
+        StartFrame = StartFrame+1;
+    end
     %% Image Processing
     addpath(genpath('.'))
     fig = uifigure;
